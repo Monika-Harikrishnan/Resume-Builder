@@ -1,0 +1,157 @@
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #333;
+        color: #fff;
+        margin: 20px;
+    }
+    h1 {
+        color: cyan;
+        text-align: center;
+    }
+    h3 {
+        color: cyan;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    table, th, td {
+        border: 1px solid #555;
+    }
+    th, td {
+        padding: 10px;
+        text-align: left;
+    }
+    th {
+        background-color: #444;
+        color:cyan;
+    }
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    li {
+        padding: 5px 0;
+        border-bottom: 1px solid #555;
+    }
+    .section {
+        margin-bottom: 20px;
+    }
+</style>
+
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+include('header.php');
+if (!empty($_SESSION['first_name'])) {
+    require('connection.php'); 
+
+    $user_id = $_SESSION['user_id'];
+
+    // Prepare SQL statement with a placeholder
+    $stmt = $conn->prepare("SELECT * FROM users WHERE user_id = ?");
+    if ($stmt === false) {
+        die("Prepare failed: " . $conn->error);
+    }
+
+    // Bind parameters and execute
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+
+        // Display user details
+        echo "<h1>Resume</h1>";
+        echo "<table>
+            <tr><th colspan='2'>Personal Details</th></tr>
+            <tr><td><strong>User ID:</strong></td><td>" . htmlspecialchars($user['user_id']) . "</td></tr>
+            <tr><td><strong>Name:</strong></td><td>" . htmlspecialchars($user['first_name']) . " " . htmlspecialchars($user['last_name']) . "</td></tr>
+            <tr><td><strong>Phone Number:</strong></td><td>" . htmlspecialchars($user['phone_num']) . "</td></tr>
+            <tr><td><strong>Email:</strong></td><td>" . htmlspecialchars($user['email']) . "</td></tr>
+            <tr><td><strong>Date of Birth:</strong></td><td>" . htmlspecialchars($user['date_of_birth']) . "</td></tr>
+            <tr><td><strong>Father's Name:</strong></td><td>" . htmlspecialchars($user['father_name']) . "</td></tr>
+            <tr><td><strong>Father's Occupation:</strong></td><td>" . htmlspecialchars($user['father_occupation']) . "</td></tr>
+            <tr><td><strong>Mother's Name:</strong></td><td>" . htmlspecialchars($user['mother_name']) . "</td></tr>
+            <tr><td><strong>Mother's Occupation:</strong></td><td>" . htmlspecialchars($user['mother_occupation']) . "</td></tr>
+            <tr><td><strong>Marital Status:</strong></td><td>" . htmlspecialchars($user['marital_status']) . "</td></tr>
+            <tr><td><strong>Gender:</strong></td><td>" . htmlspecialchars($user['gender']) . "</td></tr>
+            <tr><td><strong>Skills:</strong></td><td>" . htmlspecialchars($user['skills']) . "</td></tr>
+        </table>";
+
+        // Fetch and display additional details
+        $user_id = $user['user_id'];
+
+        // Education
+        $stmt_edu = $conn->prepare("SELECT specialization, institution, year_of_passing, edu_percentage FROM educations WHERE user_id = ?");
+        $stmt_edu->bind_param("i", $user_id);
+        $stmt_edu->execute();
+        $result_edu = $stmt_edu->get_result();
+        echo "<div class='section'><h3>Education</h3><ul>";
+        while ($education = $result_edu->fetch_assoc()) {
+            echo "<li>" . htmlspecialchars($education['specialization']) . " from " . htmlspecialchars($education['institution']) . " - " . htmlspecialchars($education['edu_percentage']) . "% (" . htmlspecialchars($education['year_of_passing']) . ")</li>";
+        }
+        echo "</ul></div>";
+
+        // Addresses
+        $stmt_addr = $conn->prepare("SELECT address1, address2, city, address_state, country, pincode FROM addresses WHERE user_id = ?");
+        $stmt_addr->bind_param("i", $user_id);
+        $stmt_addr->execute();
+        $result_addr = $stmt_addr->get_result();
+        echo "<div class='section'><h3>Addresses</h3><ul>";
+        while ($address = $result_addr->fetch_assoc()) {
+            echo "<li>" . htmlspecialchars($address['address1']) . ", " . htmlspecialchars($address['address2']) . ", " . htmlspecialchars($address['city']) . ", " . htmlspecialchars($address['address_state']) . " - " . htmlspecialchars($address['country']) . " - " . htmlspecialchars($address['pincode']) . "</li>";
+        }
+        echo "</ul></div>";
+
+        // Projects
+        $stmt_proj = $conn->prepare("SELECT project_name, project_description, project_duration, project_contribution FROM project_details WHERE user_id = ?");
+        $stmt_proj->bind_param("i", $user_id);
+        $stmt_proj->execute();
+        $result_proj = $stmt_proj->get_result();
+        echo "<div class='section'><h3>Projects</h3><ul>";
+        while ($project = $result_proj->fetch_assoc()) {
+            echo "<li>" . htmlspecialchars($project['project_name']) . " - " . htmlspecialchars($project['project_description']) . " - " . htmlspecialchars($project['project_contribution']) . " (" . htmlspecialchars($project['project_duration']) . ")</li>";
+        }
+        echo "</ul></div>";
+
+        // Certificates
+        $stmt_cert = $conn->prepare("SELECT certificate_name, certificate_institution, duration_from, duration_to FROM certificate_details WHERE user_id = ?");
+        $stmt_cert->bind_param("i", $user_id);
+        $stmt_cert->execute();
+        $result_cert = $stmt_cert->get_result();
+        echo "<div class='section'><h3>Certificates</h3><ul>";
+        while ($certificate = $result_cert->fetch_assoc()) {
+            echo "<li>" . htmlspecialchars($certificate['certificate_name']) . " from " . htmlspecialchars($certificate['certificate_institution']) . " (" . htmlspecialchars($certificate['duration_from']) . " - " . htmlspecialchars($certificate['duration_to']) . ")</li>";
+        }
+        echo "</ul></div>";
+
+        // Experiences
+        $stmt_exp = $conn->prepare("SELECT company_name, role, duration_from, duration_to FROM experiences WHERE user_id = ?");
+        $stmt_exp->bind_param("i", $user_id);
+        $stmt_exp->execute();
+        $result_exp = $stmt_exp->get_result();
+        echo "<div class='section'><h3>Experiences</h3><ul>";
+        while ($experience = $result_exp->fetch_assoc()) {
+            echo "<li>" . htmlspecialchars($experience['company_name']) . " as " . htmlspecialchars($experience['role']) . " (" . htmlspecialchars($experience['duration_from']) . " - " . htmlspecialchars($experience['duration_to']) . ")</li>";
+        }
+        echo "</ul></div>";
+
+        // Close statement and connection
+        $stmt->close();
+        $conn->close();
+    } else {
+        echo "<h1 style='color: yellow; text-align: center;'>Resume not created</h1>";
+    }
+
+    include('footer.php');
+}
+?>
+

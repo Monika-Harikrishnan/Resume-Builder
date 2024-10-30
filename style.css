@@ -1,0 +1,35 @@
+
+h3{
+    color:cyan;
+    text-align:center;
+    text-decoration:underline;
+    font-size:larger;
+}
+label{
+    color:white;
+}
+span{
+    color:red;
+}
+table{
+    padding:50px;
+    border-spacing: 20px;
+    margin-left:auto;
+    margin-right:auto;
+}
+.last{
+    padding:0px;
+}
+.button{
+    border-style: none;
+  
+    font-size:16px;
+    cursor: pointer;
+    padding: 15px 32px;
+}
+.button:hover{
+    font-size:16px;
+}
+textarea{
+    resize: none;
+}
